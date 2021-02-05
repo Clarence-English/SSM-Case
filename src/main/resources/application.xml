@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+                           http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+">
+
+    <!-- 开启注解扫描（注：Spring不能扫描SpringMVC的注解） -->
+    <context:component-scan base-package="com.dhw">
+        <!-- 排除 Controller 注解 -->
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller"/>
+        <!-- 排除 ControllerAdvice 注解 -->
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
+
+    <!-- 导入外部依赖 -->
+    <context:property-placeholder location="classpath:mysql.properties"/>
+
+    <!-- 配置数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${mysql.driverClass}"/>
+        <property name="url" value="${mysql.url}"/>
+        <property name="username" value="${mysql.user}"/>
+        <property name="password" value="${mysql.password}"/>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+          id="transactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 开启对注解事务的支持 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- SqlSessionFactoryBean 会创建 SqlSessionFactory 对象 -->
+    <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactory">
+        <!-- 指定数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- mapperLocations：所有sql映射文件所在的位置 -->
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <!-- 指定Mybatis全局配置文件位置 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <!-- typeAliasesPackage：批量别名处理 -->
+        <property name="typeAliasesPackage" value="com.dhw.ssm.entity"/>
+    </bean>
+
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg ref="sqlSessionFactory" name="sqlSessionFactory"/>
+        <constructor-arg name="executorType" value="BATCH"/>
+    </bean>
+
+    <!-- 自动的扫描所有的mapper的实现并加入到ioc容器中 -->
+    <bean id="configure" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- basePackage:指定包下所有的mapper接口实现自动扫描并加入到ioc容器中 -->
+        <property name="basePackage" value="com.dhw.ssm.mapper"/>
+    </bean>
+
+</beans>
